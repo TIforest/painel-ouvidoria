@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Painel Jurídico — Canal de Ouvidoria Forest Paper</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-mark">FP</span>
+      <div class="brand-text">
+        <strong>Forest Paper</strong>
+        <span>Painel do Jurídico — Ouvidoria</span>
+      </div>
+    </div>
+    <button type="button" id="logout-btn" class="link-btn" hidden>Sair</button>
+  </div>
+</header>
+
+<main class="page">
+
+  <section id="login-view" class="card login-card">
+    <h1>Acesso ao painel</h1>
+    <p class="hint">Entre com a senha compartilhada com o time do jurídico.</p>
+    <form id="login-form">
+      <div class="field">
+        <label for="senha">Senha</label>
+        <input type="password" id="senha" name="senha" required autocomplete="current-password" />
+      </div>
+      <button type="submit" class="submit-btn">Entrar</button>
+      <p id="login-status" class="form-status" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <section id="dashboard-view" hidden>
+    <div class="toolbar">
+      <div class="filters">
+        <button type="button" class="filter-btn active" data-status="todas">Todas</button>
+        <button type="button" class="filter-btn" data-status="aberta">Abertas</button>
+        <button type="button" class="filter-btn" data-status="andamento">Em andamento</button>
+        <button type="button" class="filter-btn" data-status="fechada">Fechadas</button>
+      </div>
+      <button type="button" id="refresh-btn" class="link-btn">Atualizar</button>
+    </div>
+
+    <div id="lista" class="lista"></div>
+    <p id="lista-vazia" class="hint" hidden>Nenhuma manifestação encontrada.</p>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
