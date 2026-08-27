@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "ouvidoria-painel",
+  "account_id": "ecc2e58aa45d10954dccbf42fd4d45ee",
   "main": "src/index.js",
   "compatibility_date": "2026-08-27",
   "assets": {
@@ -11,7 +12,7 @@
     {
       "binding": "DB",
       "database_name": "ouvidoria-painel",
-      "database_id": "aa8353b9-a2a2-439f-9f0e-aff66e5c937f",
+      "database_id": "87f8c432-efe4-4769-adb9-4653bcdfe185",
       "migrations_dir": "./migrations"
     }
   ],
