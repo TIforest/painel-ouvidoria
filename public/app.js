@@ -6,7 +6,6 @@ const loginStatus = document.getElementById("login-status");
 const logoutBtn = document.getElementById("logout-btn");
 const lista = document.getElementById("lista");
 const listaVazia = document.getElementById("lista-vazia");
-const refreshBtn = document.getElementById("refresh-btn");
 const filterBtns = document.querySelectorAll(".filter-btn");
 const addBtn = document.getElementById("add-btn");
 const addForm = document.getElementById("add-form");
@@ -73,8 +72,6 @@ logoutBtn.addEventListener("click", async () => {
   await fetch("/api/logout", { method: "POST" });
   mostrarLogin();
 });
-
-refreshBtn.addEventListener("click", carregarDenuncias);
 
 addBtn.addEventListener("click", () => {
   addForm.hidden = false;
@@ -166,23 +163,21 @@ function criarCard(d) {
       </div>
     </button>
     <div class="denuncia-body" hidden>
-      <div class="field-row">
-        <div class="field">
-          <label>Status</label>
-          <select class="status-select">
-            <option value="aberta" ${d.status === "aberta" ? "selected" : ""}>Aberta</option>
-            <option value="andamento" ${d.status === "andamento" ? "selected" : ""}>Em andamento</option>
-            <option value="fechada" ${d.status === "fechada" ? "selected" : ""}>Fechada</option>
-          </select>
+      <div class="field">
+        <label>Status</label>
+        <div class="choice-group">
+          <button type="button" class="choice-btn choice-aberta ${d.status === "aberta" ? "active" : ""}" data-value="aberta">Aberta</button>
+          <button type="button" class="choice-btn choice-andamento ${d.status === "andamento" ? "active" : ""}" data-value="andamento">Em andamento</button>
+          <button type="button" class="choice-btn choice-fechada ${d.status === "fechada" ? "active" : ""}" data-value="fechada">Fechada</button>
         </div>
-        <div class="field">
-          <label>Prioridade</label>
-          <select class="prioridade-select">
-            <option value="" ${!d.prioridade ? "selected" : ""}>Não definida</option>
-            <option value="alta" ${d.prioridade === "alta" ? "selected" : ""}>Alta</option>
-            <option value="media" ${d.prioridade === "media" ? "selected" : ""}>Média</option>
-            <option value="baixa" ${d.prioridade === "baixa" ? "selected" : ""}>Baixa</option>
-          </select>
+      </div>
+
+      <div class="field">
+        <label>Prioridade <span class="hint-inline">(clique de novo para tirar)</span></label>
+        <div class="choice-group">
+          <button type="button" class="choice-btn choice-alta ${d.prioridade === "alta" ? "active" : ""}" data-value="alta">Alta</button>
+          <button type="button" class="choice-btn choice-media ${d.prioridade === "media" ? "active" : ""}" data-value="media">Média</button>
+          <button type="button" class="choice-btn choice-baixa ${d.prioridade === "baixa" ? "active" : ""}" data-value="baixa">Baixa</button>
         </div>
       </div>
 
@@ -192,7 +187,7 @@ function criarCard(d) {
       </div>
 
       <div class="denuncia-actions">
-        <button type="button" class="submit-btn secondary salvar-btn">Salvar alterações</button>
+        <button type="button" class="submit-btn secondary salvar-btn">Salvar notas</button>
         <span class="salvar-status"></span>
       </div>
     </div>
@@ -205,12 +200,76 @@ function criarCard(d) {
     article.classList.toggle("expandido", !body.hidden);
   });
 
+  const statusBadge = article.querySelector(".status-badge");
+  const dot = article.querySelector(".prioridade-dot");
+
+  function atualizarVisualStatus() {
+    statusBadge.className = `status-badge status-${d.status}`;
+    statusBadge.textContent = STATUS_LABEL[d.status];
+    article.className = `denuncia-card status-${d.status}${body.hidden ? "" : " expandido"}`;
+  }
+
+  function atualizarVisualPrioridade() {
+    dot.className = `prioridade-dot ${d.prioridade ? "prioridade-" + d.prioridade : "prioridade-none"}`;
+    dot.title = `Prioridade: ${d.prioridade ? PRIORIDADE_LABEL[d.prioridade] : "não definida"}`;
+  }
+
+  async function salvarCampo(campo, valor) {
+    const res = await fetch(`/api/denuncias/${d.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [campo]: valor }),
+    });
+    if (res.status === 401) {
+      mostrarLogin();
+      throw new Error("sessao expirada");
+    }
+    if (!res.ok) throw new Error("falha ao salvar");
+  }
+
+  article.querySelectorAll(".choice-aberta, .choice-andamento, .choice-fechada").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const valorAnterior = d.status;
+      const novoValor = btn.dataset.value;
+      if (novoValor === valorAnterior) return;
+
+      d.status = novoValor;
+      atualizarVisualStatus();
+      article.querySelectorAll(".choice-aberta, .choice-andamento, .choice-fechada").forEach((b) => b.classList.toggle("active", b.dataset.value === novoValor));
+
+      try {
+        await salvarCampo("status", novoValor);
+      } catch {
+        d.status = valorAnterior;
+        atualizarVisualStatus();
+        article.querySelectorAll(".choice-aberta, .choice-andamento, .choice-fechada").forEach((b) => b.classList.toggle("active", b.dataset.value === valorAnterior));
+      }
+    });
+  });
+
+  article.querySelectorAll(".choice-alta, .choice-media, .choice-baixa").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const valorAnterior = d.prioridade;
+      const novoValor = btn.classList.contains("active") ? null : btn.dataset.value;
+
+      d.prioridade = novoValor;
+      atualizarVisualPrioridade();
+      article.querySelectorAll(".choice-alta, .choice-media, .choice-baixa").forEach((b) => b.classList.toggle("active", b.dataset.value === novoValor));
+
+      try {
+        await salvarCampo("prioridade", novoValor);
+      } catch {
+        d.prioridade = valorAnterior;
+        atualizarVisualPrioridade();
+        article.querySelectorAll(".choice-alta, .choice-media, .choice-baixa").forEach((b) => b.classList.toggle("active", b.dataset.value === valorAnterior));
+      }
+    });
+  });
+
   const salvarBtn = article.querySelector(".salvar-btn");
   const salvarStatus = article.querySelector(".salvar-status");
 
   salvarBtn.addEventListener("click", async () => {
-    const novoStatus = article.querySelector(".status-select").value;
-    const novaPrioridade = article.querySelector(".prioridade-select").value || null;
     const novasNotas = article.querySelector(".notas-textarea").value;
 
     salvarBtn.disabled = true;
@@ -218,26 +277,8 @@ function criarCard(d) {
     salvarStatus.className = "salvar-status";
 
     try {
-      const res = await fetch(`/api/denuncias/${d.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: novoStatus, prioridade: novaPrioridade, notas_juridico: novasNotas }),
-      });
-      if (!res.ok) throw new Error("falha ao salvar");
-
-      d.status = novoStatus;
-      d.prioridade = novaPrioridade;
+      await salvarCampo("notas_juridico", novasNotas);
       d.notas_juridico = novasNotas;
-
-      article.className = `denuncia-card status-${d.status} expandido`;
-      const statusBadge = article.querySelector(".status-badge");
-      statusBadge.className = `status-badge status-${d.status}`;
-      statusBadge.textContent = STATUS_LABEL[d.status];
-
-      const dot = article.querySelector(".prioridade-dot");
-      dot.className = `prioridade-dot ${d.prioridade ? "prioridade-" + d.prioridade : "prioridade-none"}`;
-      dot.title = `Prioridade: ${d.prioridade ? PRIORIDADE_LABEL[d.prioridade] : "não definida"}`;
-
       salvarStatus.textContent = "Salvo.";
       salvarStatus.classList.add("success");
     } catch {
