@@ -8,6 +8,11 @@ const lista = document.getElementById("lista");
 const listaVazia = document.getElementById("lista-vazia");
 const refreshBtn = document.getElementById("refresh-btn");
 const filterBtns = document.querySelectorAll(".filter-btn");
+const addBtn = document.getElementById("add-btn");
+const addForm = document.getElementById("add-form");
+const addCancelarBtn = document.getElementById("add-cancelar");
+const novoProtocoloInput = document.getElementById("novo-protocolo");
+const addStatus = document.getElementById("add-status");
 
 let denuncias = [];
 let filtroAtual = "todas";
@@ -70,6 +75,48 @@ logoutBtn.addEventListener("click", async () => {
 });
 
 refreshBtn.addEventListener("click", carregarDenuncias);
+
+addBtn.addEventListener("click", () => {
+  addForm.hidden = false;
+  addStatus.textContent = "";
+  addStatus.className = "form-status";
+  novoProtocoloInput.focus();
+});
+
+addCancelarBtn.addEventListener("click", () => {
+  addForm.hidden = true;
+  addForm.reset();
+  addStatus.textContent = "";
+  addStatus.className = "form-status";
+});
+
+addForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  addStatus.textContent = "";
+  addStatus.className = "form-status";
+
+  const res = await fetch("/api/denuncias", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ protocolo: novoProtocoloInput.value.trim() }),
+  });
+
+  if (res.status === 401) {
+    mostrarLogin();
+    return;
+  }
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    addStatus.textContent = data.error === "esse protocolo ja foi adicionado" ? "Esse protocolo já foi adicionado." : "Erro ao adicionar. Confira o número e tente de novo.";
+    addStatus.classList.add("error");
+    return;
+  }
+
+  addForm.reset();
+  addForm.hidden = true;
+  await carregarDenuncias();
+});
 
 filterBtns.forEach((btn) => {
   btn.addEventListener("click", () => {

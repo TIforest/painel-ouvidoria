@@ -10,18 +10,6 @@ function json(data, status, extraHeaders) {
   });
 }
 
-function corsHeaders(env) {
-  return {
-    "Access-Control-Allow-Origin": env.ALLOWED_ORIGIN,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-  };
-}
-
-function origemPermitida(request, env) {
-  return request.headers.get("Origin") === env.ALLOWED_ORIGIN;
-}
-
 function safeEqual(a, b) {
   if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
   let result = 0;
@@ -63,33 +51,31 @@ async function destroySession(request, env) {
   if (id) await env.DB.prepare("DELETE FROM sessions WHERE id = ?1").bind(id).run();
 }
 
-async function handleIngest(request, env) {
-  if (!origemPermitida(request, env)) {
-    return json({ error: "origem nao autorizada" }, 403, corsHeaders(env));
-  }
+async function handleCreate(request, env) {
+  if (!(await verifySession(request, env))) return json({ error: "unauthorized" }, 401);
 
   let data;
   try {
     data = await request.json();
   } catch {
-    return json({ error: "json invalido" }, 400, corsHeaders(env));
+    return json({ error: "json invalido" }, 400);
   }
 
-  if (!data.protocolo || typeof data.protocolo !== "string") {
-    return json({ error: "campo obrigatorio ausente: protocolo" }, 400, corsHeaders(env));
+  const protocolo = typeof data.protocolo === "string" ? data.protocolo.trim() : "";
+  if (!protocolo) {
+    return json({ error: "informe o protocolo" }, 400);
   }
 
   try {
-    await env.DB.prepare(`INSERT INTO denuncias (protocolo) VALUES (?1)`).bind(data.protocolo).run();
+    await env.DB.prepare(`INSERT INTO denuncias (protocolo) VALUES (?1)`).bind(protocolo).run();
   } catch (err) {
-    // protocolo repetido (reenvio) nao deve travar o site publico
     if (String(err.message || "").includes("UNIQUE")) {
-      return json({ ok: true }, 200, corsHeaders(env));
+      return json({ error: "esse protocolo ja foi adicionado" }, 409);
     }
-    return json({ error: "falha ao registrar" }, 500, corsHeaders(env));
+    return json({ error: "falha ao registrar" }, 500);
   }
 
-  return json({ ok: true }, 200, corsHeaders(env));
+  return json({ ok: true }, 200);
 }
 
 async function handleLogin(request, env) {
@@ -174,17 +160,11 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (url.pathname === "/api/ingest") {
-      if (request.method === "OPTIONS") {
-        return new Response(null, { status: 204, headers: corsHeaders(env) });
-      }
-      if (request.method === "POST") return handleIngest(request, env);
-    }
-
     if (url.pathname === "/api/login" && request.method === "POST") return handleLogin(request, env);
     if (url.pathname === "/api/logout" && request.method === "POST") return handleLogout(request, env);
     if (url.pathname === "/api/me" && request.method === "GET") return handleMe(request, env);
     if (url.pathname === "/api/denuncias" && request.method === "GET") return handleList(request, env);
+    if (url.pathname === "/api/denuncias" && request.method === "POST") return handleCreate(request, env);
 
     const updateMatch = url.pathname.match(/^\/api\/denuncias\/(\d+)$/);
     if (updateMatch && request.method === "PATCH") {

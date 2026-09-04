@@ -258,6 +258,12 @@ textarea.notas-textarea {
   border-color: var(--forest-dark);
 }
 
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .toolbar .link-btn {
   border-color: var(--border);
   color: var(--forest-dark);
@@ -265,6 +271,21 @@ textarea.notas-textarea {
 
 .toolbar .link-btn:hover {
   background: #eef5f0;
+}
+
+.add-card {
+  margin-bottom: 18px;
+  padding: 20px;
+}
+
+.add-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.add-actions .submit-btn {
+  width: auto;
 }
 
 /* ---------- lista / cards ---------- */

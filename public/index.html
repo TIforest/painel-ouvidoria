@@ -45,8 +45,23 @@
         <button type="button" class="filter-btn" data-status="andamento">Em andamento</button>
         <button type="button" class="filter-btn" data-status="fechada">Fechadas</button>
       </div>
-      <button type="button" id="refresh-btn" class="link-btn">Atualizar</button>
+      <div class="toolbar-actions">
+        <button type="button" id="add-btn" class="submit-btn secondary">+ Adicionar protocolo</button>
+        <button type="button" id="refresh-btn" class="link-btn">Atualizar</button>
+      </div>
     </div>
+
+    <form id="add-form" class="card add-card" hidden>
+      <div class="field">
+        <label for="novo-protocolo">Número do protocolo</label>
+        <input type="text" id="novo-protocolo" name="novo-protocolo" placeholder="Ex: FP-20260904-1234" required autocomplete="off" />
+      </div>
+      <div class="add-actions">
+        <button type="submit" class="submit-btn">Adicionar</button>
+        <button type="button" id="add-cancelar" class="link-btn">Cancelar</button>
+        <span id="add-status" class="form-status"></span>
+      </div>
+    </form>
 
     <div id="lista" class="lista"></div>
     <p id="lista-vazia" class="hint" hidden>Nenhuma manifestação encontrada.</p>

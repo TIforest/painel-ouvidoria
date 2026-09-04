@@ -16,9 +16,6 @@
       "migrations_dir": "./migrations"
     }
   ],
-  "vars": {
-    "ALLOWED_ORIGIN": "https://tiforest.github.io"
-  },
   "observability": {
     "enabled": true
   }
