@@ -235,13 +235,7 @@ function criarCard(d) {
       </div>
 
       <div class="apagar-area">
-        <button type="button" class="apagar-link">Apagar protocolo</button>
-        <div class="apagar-confirmar" hidden>
-          <input type="password" class="apagar-senha" placeholder="Senha para apagar" autocomplete="off" />
-          <button type="button" class="link-btn apagar-confirmar-btn">Confirmar exclusão</button>
-          <button type="button" class="link-btn apagar-cancelar-btn">Cancelar</button>
-          <span class="apagar-erro"></span>
-        </div>
+        <button type="button" class="lixeira-btn" title="Apagar protocolo">🗑️</button>
       </div>
     </div>
   `;
@@ -408,6 +402,9 @@ function criarCard(d) {
       d.notas_juridico = novasNotas;
       salvarStatus.textContent = "Salvo.";
       salvarStatus.classList.add("success");
+      setTimeout(() => {
+        if (!body.hidden) alternarExpandido();
+      }, 600);
     } catch {
       salvarStatus.textContent = "Erro ao salvar. Tente de novo.";
       salvarStatus.classList.add("error");
@@ -416,59 +413,69 @@ function criarCard(d) {
     }
   });
 
-  const apagarLink = article.querySelector(".apagar-link");
-  const apagarConfirmar = article.querySelector(".apagar-confirmar");
-  const apagarSenhaInput = article.querySelector(".apagar-senha");
-  const apagarConfirmarBtn = article.querySelector(".apagar-confirmar-btn");
-  const apagarCancelarBtn = article.querySelector(".apagar-cancelar-btn");
-  const apagarErro = article.querySelector(".apagar-erro");
-
-  apagarLink.addEventListener("click", () => {
-    apagarLink.hidden = true;
-    apagarConfirmar.hidden = false;
-    apagarErro.textContent = "";
-    apagarSenhaInput.value = "";
-    apagarSenhaInput.focus();
-  });
-
-  apagarCancelarBtn.addEventListener("click", () => {
-    apagarConfirmar.hidden = true;
-    apagarLink.hidden = false;
-    apagarErro.textContent = "";
-  });
-
-  async function confirmarExclusao() {
-    apagarErro.textContent = "";
-    apagarConfirmarBtn.disabled = true;
-    try {
-      const res = await fetch(`/api/denuncias/${d.id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ senha: apagarSenhaInput.value }),
-      });
-      if (res.status === 401) {
-        mostrarLogin();
-        return;
-      }
-      if (!res.ok) {
-        apagarErro.textContent = "Senha incorreta.";
-        return;
-      }
-      denuncias = denuncias.filter((x) => x.id !== d.id);
-      article.remove();
-      listaVazia.hidden = denuncias.filter((x) => filtroAtual === "todas" || x.status === filtroAtual).length > 0;
-    } finally {
-      apagarConfirmarBtn.disabled = false;
-    }
-  }
-
-  apagarConfirmarBtn.addEventListener("click", confirmarExclusao);
-  apagarSenhaInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") confirmarExclusao();
-    if (e.key === "Escape") apagarCancelarBtn.click();
-  });
+  const lixeiraBtn = article.querySelector(".lixeira-btn");
+  lixeiraBtn.addEventListener("click", () => abrirModalExclusao(d, article));
 
   return article;
 }
+
+/* ---------- modal de exclusao (compartilhado por todos os cards) ---------- */
+const apagarModal = document.getElementById("apagar-modal");
+const apagarModalSenha = document.getElementById("apagar-modal-senha");
+const apagarModalErro = document.getElementById("apagar-modal-erro");
+const apagarModalConfirmarBtn = document.getElementById("apagar-modal-confirmar");
+const apagarModalCancelarBtn = document.getElementById("apagar-modal-cancelar");
+let alvoExclusao = null;
+
+function abrirModalExclusao(d, article) {
+  alvoExclusao = { d, article };
+  apagarModalSenha.value = "";
+  apagarModalErro.hidden = true;
+  apagarModal.hidden = false;
+  apagarModalSenha.focus();
+}
+
+function fecharModalExclusao() {
+  apagarModal.hidden = true;
+  alvoExclusao = null;
+}
+
+apagarModalCancelarBtn.addEventListener("click", fecharModalExclusao);
+
+async function confirmarExclusaoModal() {
+  if (!alvoExclusao) return;
+  apagarModalErro.hidden = true;
+  apagarModalConfirmarBtn.disabled = true;
+
+  try {
+    const res = await fetch(`/api/denuncias/${alvoExclusao.d.id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ senha: apagarModalSenha.value }),
+    });
+    if (res.status === 401) {
+      fecharModalExclusao();
+      mostrarLogin();
+      return;
+    }
+    if (!res.ok) {
+      apagarModalErro.textContent = "Senha incorreta.";
+      apagarModalErro.hidden = false;
+      return;
+    }
+    denuncias = denuncias.filter((x) => x.id !== alvoExclusao.d.id);
+    alvoExclusao.article.remove();
+    listaVazia.hidden = denuncias.filter((x) => filtroAtual === "todas" || x.status === filtroAtual).length > 0;
+    fecharModalExclusao();
+  } finally {
+    apagarModalConfirmarBtn.disabled = false;
+  }
+}
+
+apagarModalConfirmarBtn.addEventListener("click", confirmarExclusaoModal);
+apagarModalSenha.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") confirmarExclusaoModal();
+  if (e.key === "Escape") fecharModalExclusao();
+});
 
 checarSessao();

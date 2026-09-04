@@ -68,6 +68,22 @@
 
 </main>
 
+<div id="apagar-modal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <h2>Apagar protocolo</h2>
+    <p class="hint">Confirme com a senha de exclusão. Essa ação não pode ser desfeita.</p>
+    <div class="field">
+      <label for="apagar-modal-senha">Senha</label>
+      <input type="password" id="apagar-modal-senha" autocomplete="off" />
+    </div>
+    <p id="apagar-modal-erro" class="form-status error" hidden></p>
+    <div class="modal-actions">
+      <button type="button" id="apagar-modal-confirmar" class="submit-btn">Confirmar exclusão</button>
+      <button type="button" id="apagar-modal-cancelar" class="link-btn">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>

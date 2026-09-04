@@ -27,6 +27,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   font-family: "Segoe UI", Roboto, Arial, sans-serif;
@@ -490,50 +494,70 @@ textarea.notas-textarea {
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid var(--border);
+  text-align: right;
 }
 
-.apagar-link {
+.lixeira-btn {
   background: none;
   border: none;
-  color: var(--text-muted);
-  font-size: 12px;
+  font-size: 15px;
   cursor: pointer;
-  padding: 2px 0;
+  padding: 4px 6px;
+  border-radius: 6px;
+  opacity: 0.55;
 }
 
-.apagar-link:hover {
-  color: var(--danger);
-  text-decoration: underline;
+.lixeira-btn:hover {
+  opacity: 1;
+  background: var(--status-aberta-bg);
 }
 
-.apagar-confirmar {
+/* ---------- modal (aviso / confirmacao) ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 30, 25, 0.45);
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
 }
 
-.apagar-senha {
-  padding: 5px 9px;
-  font-size: 13px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  width: 160px;
+.modal-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 26px;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
 }
 
-.apagar-confirmar .link-btn {
+.modal-card h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: var(--forest-dark);
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.modal-actions .submit-btn {
+  width: auto;
+  background: var(--danger);
+}
+
+.modal-actions .submit-btn:hover {
+  background: #8f1e17;
+}
+
+.modal-actions .link-btn {
   border-color: var(--border);
-  font-size: 12px;
-  padding: 5px 10px;
-}
-
-.apagar-confirmar-btn {
-  color: var(--danger) !important;
-}
-
-.apagar-erro {
-  font-size: 12px;
-  color: var(--danger);
+  color: var(--forest-dark);
 }
 
 .hint-inline {
