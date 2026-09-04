@@ -110,35 +110,15 @@ function criarCard(d) {
     <button type="button" class="denuncia-header">
       <div class="denuncia-id">
         <span class="protocolo">${escapeHtml(d.protocolo)}</span>
-        <span class="tipo-badge">${escapeHtml(d.tipo)}</span>
       </div>
       <div class="denuncia-meta">
         <span class="prioridade-dot ${prioridadeClasse}" title="Prioridade: ${prioridadeTitulo}"></span>
         <span class="status-badge status-${d.status}">${STATUS_LABEL[d.status]}</span>
-        <span class="data">${escapeHtml(d.data_envio)}</span>
+        <span class="data">${escapeHtml(d.created_at)}</span>
         <span class="chevron">›</span>
       </div>
     </button>
     <div class="denuncia-body" hidden>
-      <div class="detalhe-grid">
-        <div><span class="detalhe-label">Identificação</span><span>${escapeHtml(d.identificacao)}</span></div>
-        ${d.nome ? `<div><span class="detalhe-label">Nome</span><span>${escapeHtml(d.nome)}</span></div>` : ""}
-        ${d.email ? `<div><span class="detalhe-label">Contato</span><span>${escapeHtml(d.email)}</span></div>` : ""}
-        ${d.contato_retorno ? `<div><span class="detalhe-label">Contato para retorno</span><span>${escapeHtml(d.contato_retorno)}</span></div>` : ""}
-        ${d.setor ? `<div><span class="detalhe-label">Setor</span><span>${escapeHtml(d.setor)}</span></div>` : ""}
-      </div>
-
-      <div class="field">
-        <span class="detalhe-label">Descrição</span>
-        <p class="mensagem">${escapeHtml(d.mensagem)}</p>
-      </div>
-
-      ${
-        d.evidencias
-          ? `<div class="field"><span class="detalhe-label">Evidências</span><br /><a href="${escapeHtml(d.evidencias)}" target="_blank" rel="noopener noreferrer">${escapeHtml(d.evidencias)}</a></div>`
-          : ""
-      }
-
       <div class="field-row">
         <div class="field">
           <label>Status</label>
@@ -160,8 +140,8 @@ function criarCard(d) {
       </div>
 
       <div class="field">
-        <label>Notas do jurídico</label>
-        <textarea class="notas-textarea" placeholder="Anotações internas sobre o andamento...">${escapeHtml(d.notas_juridico || "")}</textarea>
+        <label>O que foi feito</label>
+        <textarea class="notas-textarea" placeholder="Ex: liguei para fulano em 02/09 e avisei sobre o caso...">${escapeHtml(d.notas_juridico || "")}</textarea>
       </div>
 
       <div class="denuncia-actions">

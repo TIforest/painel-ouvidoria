@@ -18,6 +18,10 @@ function corsHeaders(env) {
   };
 }
 
+function origemPermitida(request, env) {
+  return request.headers.get("Origin") === env.ALLOWED_ORIGIN;
+}
+
 function safeEqual(a, b) {
   if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
   let result = 0;
@@ -60,6 +64,10 @@ async function destroySession(request, env) {
 }
 
 async function handleIngest(request, env) {
+  if (!origemPermitida(request, env)) {
+    return json({ error: "origem nao autorizada" }, 403, corsHeaders(env));
+  }
+
   let data;
   try {
     data = await request.json();
@@ -67,33 +75,12 @@ async function handleIngest(request, env) {
     return json({ error: "json invalido" }, 400, corsHeaders(env));
   }
 
-  const required = ["protocolo", "data_envio", "tipo", "identificacao", "mensagem"];
-  for (const field of required) {
-    if (!data[field] || typeof data[field] !== "string") {
-      return json({ error: `campo obrigatorio ausente: ${field}` }, 400, corsHeaders(env));
-    }
+  if (!data.protocolo || typeof data.protocolo !== "string") {
+    return json({ error: "campo obrigatorio ausente: protocolo" }, 400, corsHeaders(env));
   }
 
   try {
-    await env.DB.prepare(
-      `INSERT INTO denuncias
-        (protocolo, data_envio, tipo, identificacao, nome, email, setor, mensagem, evidencias, contato_retorno, id_navegador)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)`
-    )
-      .bind(
-        data.protocolo,
-        data.data_envio,
-        data.tipo,
-        data.identificacao,
-        data.nome || null,
-        data.email || null,
-        data.setor || null,
-        data.mensagem,
-        data.evidencias || null,
-        data.contato_retorno || null,
-        data.id_navegador || null
-      )
-      .run();
+    await env.DB.prepare(`INSERT INTO denuncias (protocolo) VALUES (?1)`).bind(data.protocolo).run();
   } catch (err) {
     // protocolo repetido (reenvio) nao deve travar o site publico
     if (String(err.message || "").includes("UNIQUE")) {
@@ -132,8 +119,7 @@ async function handleMe(request, env) {
 async function handleList(request, env) {
   if (!(await verifySession(request, env))) return json({ error: "unauthorized" }, 401);
   const { results } = await env.DB.prepare(
-    `SELECT id, protocolo, data_envio, tipo, identificacao, nome, email, setor, mensagem,
-            evidencias, contato_retorno, status, prioridade, notas_juridico, created_at, updated_at
+    `SELECT id, protocolo, status, prioridade, notas_juridico, created_at, updated_at
      FROM denuncias
      ORDER BY created_at DESC`
   ).all();
@@ -184,14 +170,8 @@ async function handleUpdate(request, env, id) {
   return json({ ok: true }, 200);
 }
 
-const MODO_MANUTENCAO = true; // painel derrubado por incidente de seguranca em 04/09/2026 — reverter apos investigar
-
 export default {
   async fetch(request, env) {
-    if (MODO_MANUTENCAO) {
-      return new Response("Serviço temporariamente indisponível.", { status: 503 });
-    }
-
     const url = new URL(request.url);
 
     if (url.pathname === "/api/ingest") {
