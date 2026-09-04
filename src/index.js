@@ -170,6 +170,24 @@ async function handleUpdate(request, env, id) {
   return json({ ok: true }, 200);
 }
 
+async function handleDelete(request, env, id) {
+  if (!(await verifySession(request, env))) return json({ error: "unauthorized" }, 401);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    body = {};
+  }
+
+  if (!safeEqual(body.senha, env.DELETE_SENHA)) {
+    return json({ error: "senha incorreta" }, 403);
+  }
+
+  await env.DB.prepare("DELETE FROM denuncias WHERE id = ?1").bind(id).run();
+  return json({ ok: true }, 200);
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -183,6 +201,9 @@ export default {
     const updateMatch = url.pathname.match(/^\/api\/denuncias\/(\d+)$/);
     if (updateMatch && request.method === "PATCH") {
       return handleUpdate(request, env, Number(updateMatch[1]));
+    }
+    if (updateMatch && request.method === "DELETE") {
+      return handleDelete(request, env, Number(updateMatch[1]));
     }
 
     return env.ASSETS.fetch(request);

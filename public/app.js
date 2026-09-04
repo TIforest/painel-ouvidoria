@@ -176,7 +176,7 @@ function renderLista() {
 
 function criarCard(d) {
   const article = document.createElement("article");
-  article.className = `denuncia-card status-${d.status}`;
+  article.className = "denuncia-card";
   article.dataset.id = d.id;
 
   const prioridadeClasse = d.prioridade ? `prioridade-${d.prioridade}` : "prioridade-none";
@@ -232,6 +232,16 @@ function criarCard(d) {
       <div class="denuncia-actions">
         <button type="button" class="submit-btn secondary salvar-btn">Salvar notas</button>
         <span class="salvar-status"></span>
+      </div>
+
+      <div class="apagar-area">
+        <button type="button" class="apagar-link">Apagar protocolo</button>
+        <div class="apagar-confirmar" hidden>
+          <input type="password" class="apagar-senha" placeholder="Senha para apagar" autocomplete="off" />
+          <button type="button" class="link-btn apagar-confirmar-btn">Confirmar exclusão</button>
+          <button type="button" class="link-btn apagar-cancelar-btn">Cancelar</button>
+          <span class="apagar-erro"></span>
+        </div>
       </div>
     </div>
   `;
@@ -323,7 +333,7 @@ function criarCard(d) {
   function atualizarVisualStatus() {
     statusBadge.className = `status-badge status-${d.status}`;
     statusBadge.textContent = STATUS_LABEL[d.status];
-    article.className = `denuncia-card status-${d.status}${body.hidden ? "" : " expandido"}`;
+    article.classList.toggle("expandido", !body.hidden);
   }
 
   function atualizarVisualPrioridade() {
@@ -404,6 +414,58 @@ function criarCard(d) {
     } finally {
       salvarBtn.disabled = false;
     }
+  });
+
+  const apagarLink = article.querySelector(".apagar-link");
+  const apagarConfirmar = article.querySelector(".apagar-confirmar");
+  const apagarSenhaInput = article.querySelector(".apagar-senha");
+  const apagarConfirmarBtn = article.querySelector(".apagar-confirmar-btn");
+  const apagarCancelarBtn = article.querySelector(".apagar-cancelar-btn");
+  const apagarErro = article.querySelector(".apagar-erro");
+
+  apagarLink.addEventListener("click", () => {
+    apagarLink.hidden = true;
+    apagarConfirmar.hidden = false;
+    apagarErro.textContent = "";
+    apagarSenhaInput.value = "";
+    apagarSenhaInput.focus();
+  });
+
+  apagarCancelarBtn.addEventListener("click", () => {
+    apagarConfirmar.hidden = true;
+    apagarLink.hidden = false;
+    apagarErro.textContent = "";
+  });
+
+  async function confirmarExclusao() {
+    apagarErro.textContent = "";
+    apagarConfirmarBtn.disabled = true;
+    try {
+      const res = await fetch(`/api/denuncias/${d.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ senha: apagarSenhaInput.value }),
+      });
+      if (res.status === 401) {
+        mostrarLogin();
+        return;
+      }
+      if (!res.ok) {
+        apagarErro.textContent = "Senha incorreta.";
+        return;
+      }
+      denuncias = denuncias.filter((x) => x.id !== d.id);
+      article.remove();
+      listaVazia.hidden = denuncias.filter((x) => filtroAtual === "todas" || x.status === filtroAtual).length > 0;
+    } finally {
+      apagarConfirmarBtn.disabled = false;
+    }
+  }
+
+  apagarConfirmarBtn.addEventListener("click", confirmarExclusao);
+  apagarSenhaInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") confirmarExclusao();
+    if (e.key === "Escape") apagarCancelarBtn.click();
   });
 
   return article;

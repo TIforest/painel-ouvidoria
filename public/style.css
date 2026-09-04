@@ -309,17 +309,8 @@ textarea.notas-textarea {
 .denuncia-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-left: 4px solid var(--status-aberta);
   border-radius: var(--radius);
   overflow: hidden;
-}
-
-.denuncia-card.status-andamento {
-  border-left-color: var(--status-andamento);
-}
-
-.denuncia-card.status-fechada {
-  border-left-color: var(--status-fechada);
 }
 
 .denuncia-header {
@@ -380,24 +371,31 @@ textarea.notas-textarea {
 }
 
 .protocolo-input {
-  padding: 6px 10px;
-  font-size: 14px;
+  padding: 3px 6px;
+  font-size: 14.5px;
+  font-weight: 700;
   font-family: inherit;
-  border: 1px solid var(--forest);
-  border-radius: 6px;
-  min-width: 200px;
+  border: none;
+  border-bottom: 1px solid var(--forest);
+  border-radius: 0;
+  background: transparent;
+  width: 15ch;
+}
+
+.protocolo-input:focus {
+  outline: none;
 }
 
 .protocolo-edit-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .protocolo-edit-actions .submit-btn {
   width: auto;
-  padding: 6px 14px;
-  font-size: 13px;
+  padding: 4px 12px;
+  font-size: 12px;
 }
 
 .protocolo-edit-erro {
@@ -488,35 +486,54 @@ textarea.notas-textarea {
   padding-top: 16px;
 }
 
-.detalhe-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px 20px;
-  margin-bottom: 16px;
+.apagar-area {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
 }
 
-.detalhe-grid div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.detalhe-label {
-  font-size: 12px;
-  font-weight: 700;
+.apagar-link {
+  background: none;
+  border: none;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 0;
 }
 
-.mensagem {
-  white-space: pre-wrap;
-  background: var(--bg);
+.apagar-link:hover {
+  color: var(--danger);
+  text-decoration: underline;
+}
+
+.apagar-confirmar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.apagar-senha {
+  padding: 5px 9px;
+  font-size: 13px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px 14px;
-  font-size: 14px;
-  margin: 4px 0 0;
+  border-radius: 6px;
+  width: 160px;
+}
+
+.apagar-confirmar .link-btn {
+  border-color: var(--border);
+  font-size: 12px;
+  padding: 5px 10px;
+}
+
+.apagar-confirmar-btn {
+  color: var(--danger) !important;
+}
+
+.apagar-erro {
+  font-size: 12px;
+  color: var(--danger);
 }
 
 .hint-inline {
