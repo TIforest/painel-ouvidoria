@@ -35,10 +35,15 @@ async function checarSessao() {
   }
 }
 
-function mostrarLogin() {
+function mostrarLogin(mensagem) {
   loginView.hidden = false;
   dashboardView.hidden = true;
   logoutBtn.hidden = true;
+  pararTimerInatividade();
+  if (mensagem) {
+    loginStatus.textContent = mensagem;
+    loginStatus.className = "form-status";
+  }
 }
 
 function mostrarDashboard() {
@@ -46,7 +51,34 @@ function mostrarDashboard() {
   dashboardView.hidden = false;
   logoutBtn.hidden = false;
   carregarDenuncias();
+  iniciarTimerInatividade();
 }
+
+/* ---------- desloga automaticamente apos 10 min sem atividade ---------- */
+const TEMPO_INATIVIDADE_MS = 10 * 60 * 1000;
+let timerInatividade = null;
+
+function pararTimerInatividade() {
+  clearTimeout(timerInatividade);
+}
+
+function iniciarTimerInatividade() {
+  clearTimeout(timerInatividade);
+  timerInatividade = setTimeout(async () => {
+    await fetch("/api/logout", { method: "POST" });
+    mostrarLogin("Sessão encerrada por inatividade. Entre novamente.");
+  }, TEMPO_INATIVIDADE_MS);
+}
+
+["click", "keydown", "mousemove", "scroll", "touchstart"].forEach((evento) => {
+  document.addEventListener(
+    evento,
+    () => {
+      if (!dashboardView.hidden) iniciarTimerInatividade();
+    },
+    { passive: true }
+  );
+});
 
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -151,9 +183,20 @@ function criarCard(d) {
   const prioridadeTitulo = d.prioridade ? PRIORIDADE_LABEL[d.prioridade] : "não definida";
 
   article.innerHTML = `
-    <button type="button" class="denuncia-header">
+    <div class="denuncia-header" role="button" tabindex="0">
       <div class="denuncia-id">
-        <span class="protocolo">${escapeHtml(d.protocolo)}</span>
+        <span class="protocolo-display">
+          <span class="protocolo">${escapeHtml(d.protocolo)}</span>
+          <button type="button" class="pencil-btn" title="Editar número do protocolo">✏️</button>
+        </span>
+        <span class="protocolo-edit" hidden>
+          <input type="text" class="protocolo-input" value="${escapeHtml(d.protocolo)}" />
+          <span class="protocolo-edit-actions">
+            <button type="button" class="submit-btn secondary protocolo-salvar">Salvar</button>
+            <button type="button" class="link-btn protocolo-cancelar">Cancelar</button>
+            <span class="protocolo-edit-erro"></span>
+          </span>
+        </span>
       </div>
       <div class="denuncia-meta">
         <span class="prioridade-dot ${prioridadeClasse}" title="Prioridade: ${prioridadeTitulo}"></span>
@@ -161,7 +204,7 @@ function criarCard(d) {
         <span class="data">${escapeHtml(d.created_at)}</span>
         <span class="chevron">›</span>
       </div>
-    </button>
+    </div>
     <div class="denuncia-body" hidden>
       <div class="field">
         <label>Status</label>
@@ -195,9 +238,83 @@ function criarCard(d) {
 
   const header = article.querySelector(".denuncia-header");
   const body = article.querySelector(".denuncia-body");
-  header.addEventListener("click", () => {
+  function alternarExpandido() {
     body.hidden = !body.hidden;
     article.classList.toggle("expandido", !body.hidden);
+  }
+  header.addEventListener("click", alternarExpandido);
+  header.addEventListener("keydown", (e) => {
+    if (e.target === header && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      alternarExpandido();
+    }
+  });
+
+  const protocoloTexto = article.querySelector(".protocolo");
+  const protocoloDisplay = article.querySelector(".protocolo-display");
+  const protocoloEdit = article.querySelector(".protocolo-edit");
+  const protocoloInput = article.querySelector(".protocolo-input");
+  const pencilBtn = article.querySelector(".pencil-btn");
+  const protocoloSalvarBtn = article.querySelector(".protocolo-salvar");
+  const protocoloCancelarBtn = article.querySelector(".protocolo-cancelar");
+  const protocoloErro = article.querySelector(".protocolo-edit-erro");
+
+  pencilBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    protocoloDisplay.hidden = true;
+    protocoloEdit.hidden = false;
+    protocoloErro.textContent = "";
+    protocoloInput.value = d.protocolo;
+    protocoloInput.focus();
+    protocoloInput.select();
+  });
+
+  protocoloCancelarBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    protocoloEdit.hidden = true;
+    protocoloDisplay.hidden = false;
+    protocoloErro.textContent = "";
+  });
+
+  protocoloEdit.addEventListener("click", (e) => e.stopPropagation());
+  protocoloInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") protocoloSalvarBtn.click();
+    if (e.key === "Escape") protocoloCancelarBtn.click();
+  });
+
+  protocoloSalvarBtn.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    const novoProtocolo = protocoloInput.value.trim();
+    if (!novoProtocolo || novoProtocolo === d.protocolo) {
+      protocoloEdit.hidden = true;
+      protocoloDisplay.hidden = false;
+      return;
+    }
+
+    protocoloSalvarBtn.disabled = true;
+    protocoloErro.textContent = "";
+    try {
+      const res = await fetch(`/api/denuncias/${d.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ protocolo: novoProtocolo }),
+      });
+      if (res.status === 401) {
+        mostrarLogin();
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        protocoloErro.textContent = data.error === "esse protocolo ja foi adicionado" ? "Esse protocolo já existe." : "Erro ao salvar.";
+        return;
+      }
+      d.protocolo = novoProtocolo;
+      protocoloTexto.textContent = novoProtocolo;
+      protocoloEdit.hidden = true;
+      protocoloDisplay.hidden = false;
+    } finally {
+      protocoloSalvarBtn.disabled = false;
+    }
   });
 
   const statusBadge = article.querySelector(".status-badge");

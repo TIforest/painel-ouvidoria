@@ -125,6 +125,13 @@ async function handleUpdate(request, env, id) {
   const fields = [];
   const values = [];
 
+  if (body.protocolo !== undefined) {
+    const protocolo = typeof body.protocolo === "string" ? body.protocolo.trim() : "";
+    if (!protocolo) return json({ error: "informe o protocolo" }, 400);
+    fields.push("protocolo = ?");
+    values.push(protocolo);
+  }
+
   if (body.status !== undefined) {
     if (!STATUS_VALUES.includes(body.status)) return json({ error: "status invalido" }, 400);
     fields.push("status = ?");
@@ -149,9 +156,16 @@ async function handleUpdate(request, env, id) {
   fields.push("updated_at = datetime('now')");
   values.push(id);
 
-  await env.DB.prepare(`UPDATE denuncias SET ${fields.join(", ")} WHERE id = ?`)
-    .bind(...values)
-    .run();
+  try {
+    await env.DB.prepare(`UPDATE denuncias SET ${fields.join(", ")} WHERE id = ?`)
+      .bind(...values)
+      .run();
+  } catch (err) {
+    if (String(err.message || "").includes("UNIQUE")) {
+      return json({ error: "esse protocolo ja foi adicionado" }, 409);
+    }
+    return json({ error: "falha ao salvar" }, 500);
+  }
 
   return json({ ok: true }, 200);
 }
