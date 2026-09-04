@@ -184,8 +184,14 @@ async function handleUpdate(request, env, id) {
   return json({ ok: true }, 200);
 }
 
+const MODO_MANUTENCAO = true; // painel derrubado por incidente de seguranca em 04/09/2026 — reverter apos investigar
+
 export default {
   async fetch(request, env) {
+    if (MODO_MANUTENCAO) {
+      return new Response("Serviço temporariamente indisponível.", { status: 503 });
+    }
+
     const url = new URL(request.url);
 
     if (url.pathname === "/api/ingest") {
